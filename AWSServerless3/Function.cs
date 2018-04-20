@@ -29,13 +29,31 @@ namespace AWSServerless3
         /// <returns>The list of blogs</returns>
         public APIGatewayProxyResponse Get(APIGatewayProxyRequest request, ILambdaContext context)
         {
-            context.Logger.LogLine("Get Request\n");
+            var key = request.QueryStringParameters["Key"];
+            var token = request.QueryStringParameters["Token"];
+            string mode = request.QueryStringParameters["mode"];
+            if (mode == null)
+            {
+                mode = "encrypt";
+            }
+;            var generator = new ecencryptstdlib.ECTokenGenerator();
+            string result = string.Empty;
+            if (mode == "encrypt")
+                result = generator.EncryptV3(key, token, false);
+            else
+                result = generator.DecryptV3(key, token, false);
 
             var response = new APIGatewayProxyResponse
             {
                 StatusCode = (int)HttpStatusCode.OK,
-                Body = "Hello AWS Serverless",
-                Headers = new Dictionary<string, string> { { "Content-Type", "text/plain" } }
+                Body = result,
+                Headers = new Dictionary<string, string> {
+                    { "Content-Type", "text/plain" },
+                    { "Access-Control-Allow-Headers", "Content-Type,X-Amz-Date,Authorization,X-Api-Key,x-requested-with" },
+                    { "Access-Control-Allow-Origin", "*" },
+                    { "Access-Control-Allow-Credentials", "true" },
+                    { "Access-Control-Allow-Methods", "GET" }
+                }
             };
 
             return response;
